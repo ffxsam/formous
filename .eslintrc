@@ -1,0 +1,123 @@
+{
+  "env": {
+    "browser": true,
+    "node": true,
+    "es6": true
+  },
+  "extends": "eslint:recommended",
+  "parser": "babel-eslint",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "experimentalObjectRestSpread": true,
+      "jsx": true
+    },
+    "sourceType": "module"
+  },
+  "plugins": [
+    "flowtype",
+    "react"
+  ],
+  "rules": {
+    // Possible errors
+    "comma-dangle": [1, "always-multiline"],
+    "no-console": 0,
+    "no-duplicate-case": 2,
+    "no-irregular-whitespace": 2,
+    "no-unreachable": 1,
+
+    // Best practices
+    "curly": [2, "multi-line"],
+    "default-case": 2,
+    "dot-location": [2, "property"],
+    "dot-notation": [2, {
+      "allowKeywords": true,
+      "allowPattern": "^[A-Za-z]+(_[A-Za-z]+)+$"
+    }],
+    "eqeqeq": [2, "smart"],
+    "no-alert": 2,
+    "no-else-return": 2,
+    "no-eq-null": 2,
+    "no-lone-blocks": 2,
+    "no-multi-spaces": [2, {"exceptions": {
+      "Property": true,
+      "VariableDeclarator": true
+    }}],
+    "yoda": 2,
+
+    // Variables
+    "no-undef": 0,
+    "no-unused-vars": 1,
+
+    // Stylistic issues
+    "brace-style": 2,
+    "camelcase": 2,
+    "comma-spacing": 2,
+    "comma-style": 2,
+    "eol-last": 2,
+    "indent": [2, 2, {
+      "SwitchCase": 1 //,
+      // "VariableDeclarator": {"let": 2, "const": 3}
+    }],
+    "jsx-quotes": 2,
+    "key-spacing": 2,
+    "keyword-spacing": 2,
+    "linebreak-style": [2, "unix"],
+    "lines-around-comment": [2, {
+      "allowBlockEnd": true,
+      "allowBlockStart": true,
+      "allowObjectStart": true
+    }],
+    "max-len": [1, 80, 2, {"ignoreUrls": true}],
+    "newline-after-var": 2,
+    "no-mixed-spaces-and-tabs": [2, "smart-tabs"],
+    "no-multiple-empty-lines": [2, {"max": 1}],
+    "no-spaced-func": 2,
+    "no-trailing-spaces": 1,
+    "object-curly-spacing": [2, "always"],
+    "operator-assignment": 1,
+    "operator-linebreak": 2,
+    "padded-blocks": [2, "never"],
+    "quote-props": [2, "as-needed"],
+    "quotes": [2, "single"],
+    "semi-spacing": 2,
+    "space-before-blocks": 2,
+    "space-before-function-paren": [1, {
+      "anonymous": "always", "named": "never"
+    }],
+    "space-infix-ops": 2,
+    "space-unary-ops": 2,
+
+    // ES6
+    "arrow-spacing": 2,
+    "constructor-super": 2,
+    "no-confusing-arrow": 2,
+    "no-const-assign": 2,
+    "no-this-before-super": 2,
+    "no-useless-constructor": 2,
+    "no-var": 2,
+    "object-shorthand": 2,
+    // "prefer-const": 2,
+    "prefer-spread": 2,
+
+    // React
+    "react/jsx-no-duplicate-props": 2,
+    "react/no-direct-mutation-state": 2,
+    "react/no-is-mounted": 2,
+    "react/jsx-uses-react": 2,
+    "react/jsx-uses-vars": 2,
+
+    // Flow
+    "flowtype/require-parameter-type": 1,
+    "flowtype/require-return-type": [1, "never", {
+      "annotateUndefined": "never"
+    }],
+    "flowtype/space-after-type-colon": [1, "always"],
+    "flowtype/space-before-type-colon": [1, "never"],
+    "flowtype/type-id-match": [1, "^([A-Z][a-z0-9]+)+Type$"]
+  },
+  "settings": {
+    "flowtype": {
+      "onlyFilesWithFlowAnnotation": true
+    }
+  }
+}

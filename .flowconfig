@@ -1,0 +1,10 @@
+[options]
+# Absolute path support:
+# e.g. "/collections/todos"
+module.name_mapper='^\/\(.*\)$' -> '<PROJECT_ROOT>/\1'
+
+[ignore]
+# Ignore problematic packages in node_modules
+.*/node_modules/cjson/.*
+.*/node_modules/fbjs/.*
+.*/node_modules/react-tap-event-plugin/.*

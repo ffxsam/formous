@@ -1,0 +1,7 @@
+{
+  "plugins": [
+    "babel-plugin-transform-class-properties",
+    "transform-flow-strip-types"
+  ],
+  "presets": ["es2015", "react", "stage-2"]
+}
