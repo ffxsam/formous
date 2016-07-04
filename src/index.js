@@ -41,8 +41,6 @@ const Formous = (fields: Object): ReactClass => {
           onBlur: this.onBlur.bind(this, fieldName, tests),
           onChange: this.onChange.bind(this, fieldName),
           onFocus: this.onFocus.bind(this),
-          // I know, this isn't technically an event, but it needs to be there
-          value: this.state.fields.getIn([fieldName, 'value']),
         };
 
         // Set initial field validity
@@ -53,6 +51,7 @@ const Formous = (fields: Object): ReactClass => {
         updatedFields[fieldName] = {
           events,
           valid: !testResult,
+          value: this.state.fields.getIn([fieldName, 'value']),
         };
       }
 
@@ -103,7 +102,7 @@ const Formous = (fields: Object): ReactClass => {
         this.setState({
           fields: this.state.fields.mergeDeep({
             [fieldName]: {
-              props: failedTest.failProps,
+              failProps: failedTest.failProps,
               valid: !failedTest.critical,
             },
           }),
@@ -115,7 +114,7 @@ const Formous = (fields: Object): ReactClass => {
               valid: true,
             },
           })
-            .deleteIn([fieldName, 'props']),
+            .deleteIn([fieldName, 'failProps']),
         });
       }
 
@@ -130,8 +129,6 @@ const Formous = (fields: Object): ReactClass => {
     }
 
     onChange(fieldName: string, { target }: Object) {
-      console.log('ok, whats up');
-      console.dir(target);
       this.setState({
         fields: this.state.fields.setIn([fieldName, 'value'], target.value),
       });
@@ -178,6 +175,8 @@ const Formous = (fields: Object): ReactClass => {
     }
 
     render() {
+      console.log(this.state.fields.toJS());
+
       return <Wrapped
         fields={this.state.fields.toJS()}
         formSubmit={this.formSubmit}
