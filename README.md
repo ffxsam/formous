@@ -30,6 +30,14 @@ class ErrorText extends Component {
 }
 
 class MyComponent extends Component {
+  componentWillReceiveProps(nextProps) {
+  	// Set default form values (might be appropriate in a different method
+  	this.props.setDefaultValues({
+  	  age: 33,
+  	  name: 'Sir Fluffalot',
+  	});
+  }
+  
   handleSubmit(formStatus, fields) {
     if (!formStatus.touched) {
       alert('Please fill out the form.');
@@ -54,12 +62,22 @@ class MyComponent extends Component {
     return <div>
       <form onSubmit={formSubmit(this.handleSubmit)}>
         <div>
-          <input placeholder="Name" type="text" { ...name.events } />
-          <ErrorText { ...name.props } />
+          <input
+            placeholder="Name"
+            type="text"
+            value={name.value}
+            { ...name.events }
+          />
+          <ErrorText { ...name.failProps } />
         </div>
         <div>
-          <input placeholder="Age" type="text" { ...age.events } />
-          <ErrorText { ...age.props } />
+          <input
+            placeholder="Age"
+            type="text"
+            value={age.value}
+            { ...age.events }
+          />
+          <ErrorText { ...age.failProps } />
         </div>
         <div>
           <button type="submit">Submit</button>

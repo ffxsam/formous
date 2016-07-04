@@ -2,7 +2,7 @@
 
 import React, { Component } from 'react';
 import prebind from 'meteor-react-prebind';
-import { fromJS } from 'immutable';
+import { Map, fromJS } from 'immutable';
 
 type TestType = {
   critical: string,
@@ -13,6 +13,7 @@ type TestType = {
 const Formous = (fields: Object): ReactClass => {
   return (Wrapped: ReactClass) => class extends Component {
     // Flow annotations
+    defaultsSet: boolean;
     fieldData: Object;
     state: Object;
 
@@ -20,8 +21,10 @@ const Formous = (fields: Object): ReactClass => {
       super(props);
       prebind(this);
 
+      this.defaultsSet = false;
+
       this.state = {
-        fields: {},
+        fields: Map({}),
         form: {
           touched: false,
           valid: false,
@@ -44,13 +47,12 @@ const Formous = (fields: Object): ReactClass => {
         };
 
         // Set initial field validity
-        // TODO: we can't assume the form is initially blank
-        // But how do we get the form input value?
         const testResult: ?TestType = this.testField(fieldName, tests, '');
 
         updatedFields[fieldName] = {
           events,
           valid: !testResult,
+          value: this.state.fields.getIn([fieldName, 'value']) || '',
         };
       }
 
@@ -101,7 +103,7 @@ const Formous = (fields: Object): ReactClass => {
         this.setState({
           fields: this.state.fields.mergeDeep({
             [fieldName]: {
-              props: failedTest.failProps,
+              failProps: failedTest.failProps,
               valid: !failedTest.critical,
             },
           }),
@@ -113,7 +115,7 @@ const Formous = (fields: Object): ReactClass => {
               valid: true,
             },
           })
-            .deleteIn([fieldName, 'props']),
+            .deleteIn([fieldName, 'failProps']),
         });
       }
 
@@ -140,6 +142,37 @@ const Formous = (fields: Object): ReactClass => {
           touched: true,
         },
       });
+    }
+
+    setDefaultValues(defaultData: Object) {
+      // Prevent settings defaults twice
+      if (!this.defaultsSet) {
+        const defaults: Object = {};
+
+        for (const fieldName: string in defaultData) {
+          const tests: ?Array<TestType> = fields[fieldName] &&
+            fields[fieldName].tests;
+          let testResult: ?TestType;
+
+          if (tests) {
+            testResult = this.testField(fieldName, tests,
+              defaultData[fieldName]);
+          } else {
+            testResult = null;
+          }
+
+          defaults[fieldName] = {
+            valid: !testResult,
+            value: defaultData[fieldName],
+          };
+        }
+
+        this.setState({
+          fields: this.state.fields.mergeDeep(defaults),
+        });
+
+        this.defaultsSet = true;
+      }
     }
 
     // Returns the failed test
@@ -175,8 +208,10 @@ const Formous = (fields: Object): ReactClass => {
 
     render() {
       return <Wrapped
+        { ...this.props }
         fields={this.state.fields.toJS()}
         formSubmit={this.formSubmit}
+        setDefaultValues={this.setDefaultValues}
       />
     }
   }
