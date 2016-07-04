@@ -169,6 +169,13 @@ const Formous = (fields: Object): ReactClass => {
 
         this.setState({
           fields: this.state.fields.mergeDeep(defaults),
+        }, () => {
+          this.setState({
+            form: {
+              ...this.state.form,
+              valid: this.isFormValid(),
+            },
+          });
         });
 
         this.defaultsSet = true;
