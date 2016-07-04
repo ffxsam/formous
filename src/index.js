@@ -2,7 +2,7 @@
 
 import React, { Component } from 'react';
 import prebind from 'meteor-react-prebind';
-import { fromJS } from 'immutable';
+import { Map, fromJS } from 'immutable';
 
 type TestType = {
   critical: string,
@@ -21,7 +21,7 @@ const Formous = (fields: Object): ReactClass => {
       prebind(this);
 
       this.state = {
-        fields: {},
+        fields: Map({}),
         form: {
           touched: false,
           valid: false,
@@ -41,6 +41,8 @@ const Formous = (fields: Object): ReactClass => {
           onBlur: this.onBlur.bind(this, fieldName, tests),
           onChange: this.onChange.bind(this, fieldName),
           onFocus: this.onFocus.bind(this),
+          // I know, this isn't technically an event, but it needs to be there
+          value: this.state.fields.getIn([fieldName, 'value']),
         };
 
         // Set initial field validity
@@ -128,6 +130,8 @@ const Formous = (fields: Object): ReactClass => {
     }
 
     onChange(fieldName: string, { target }: Object) {
+      console.log('ok, whats up');
+      console.dir(target);
       this.setState({
         fields: this.state.fields.setIn([fieldName, 'value'], target.value),
       });
