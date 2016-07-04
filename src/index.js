@@ -13,12 +13,15 @@ type TestType = {
 const Formous = (fields: Object): ReactClass => {
   return (Wrapped: ReactClass) => class extends Component {
     // Flow annotations
+    defaultsSet: boolean;
     fieldData: Object;
     state: Object;
 
     constructor(props: Object) {
       super(props);
       prebind(this);
+
+      this.defaultsSet = false;
 
       this.state = {
         fields: Map({}),
@@ -44,14 +47,12 @@ const Formous = (fields: Object): ReactClass => {
         };
 
         // Set initial field validity
-        // TODO: we can't assume the form is initially blank
-        // But how do we get the form input value?
         const testResult: ?TestType = this.testField(fieldName, tests, '');
 
         updatedFields[fieldName] = {
           events,
           valid: !testResult,
-          value: this.state.fields.getIn([fieldName, 'value']),
+          value: this.state.fields.getIn([fieldName, 'value']) || '',
         };
       }
 
@@ -143,6 +144,37 @@ const Formous = (fields: Object): ReactClass => {
       });
     }
 
+    setDefaultValues(defaultData: Object) {
+      // Prevent settings defaults twice
+      if (!this.defaultsSet) {
+        const defaults: Object = {};
+
+        for (const fieldName: string in defaultData) {
+          const tests: ?Array<TestType> = fields[fieldName] &&
+            fields[fieldName].tests;
+          let testResult: ?TestType;
+
+          if (tests) {
+            testResult = this.testField(fieldName, tests,
+              defaultData[fieldName]);
+          } else {
+            testResult = null;
+          }
+
+          defaults[fieldName] = {
+            valid: !testResult,
+            value: defaultData[fieldName],
+          };
+        }
+
+        this.setState({
+          fields: this.state.fields.mergeDeep(defaults),
+        });
+
+        this.defaultsSet = true;
+      }
+    }
+
     // Returns the failed test
     testField(fieldName: string, tests: Array<TestType>,
       value: string): ?TestType {
@@ -175,11 +207,11 @@ const Formous = (fields: Object): ReactClass => {
     }
 
     render() {
-      console.log(this.state.fields.toJS());
-
       return <Wrapped
+        { ...this.props }
         fields={this.state.fields.toJS()}
         formSubmit={this.formSubmit}
+        setDefaultValues={this.setDefaultValues}
       />
     }
   }
