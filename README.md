@@ -87,50 +87,48 @@ class MyComponent extends Component {
   }
 }
 
-const fields = {
-  name: {
-    tests: [
-      {
-        critical: true,
-        failProps: {
-          errorText: 'Name is required.',
-        },
-        test(value) {
-          return value !== '';
-        },
-      }
-    ],
-  },
+const formousOptions = {
+  fields: {
+    name: {
+      tests: [
+        {
+          critical: true,
+          failProps: {
+            errorText: 'Name is required.',
+          },
+          test(value) {
+            return value !== '';
+          },
+        }
+      ],
+    },
 
-  age: {
-    tests: [
-      {
-        critical: true,
-        failProps: {
-          errorText: 'Age should be a number.',
+    age: {
+      tests: [
+        {
+          critical: true,
+          failProps: {
+            errorText: 'Age should be a number.',
+          },
+          test(value) {
+            return /^\d*$/.test(value);
+          },
         },
-        test(value) {
-          return /^\d*$/.test(value);
+        {
+          critical: false,
+          failProps: {
+            errorText: 'Are you sure you\'re that old? :o',
+          },
+          test(value) {
+            return +value < 120;
+          },
         },
-      },
-      {
-        critical: false,
-        failProps: {
-          errorText: 'Are you sure you\'re that old? :o',
-        },
-        test(value) {
-          return +value < 120;
-        },
-      },
-    ],
+      ],
+    },
   },
 };
 
 export default Formous(fields)(MyComponent)
 ```
 
-## Future Plans
-
-* Better documentation (obviously)!
-* Better developer experience (detailed error messages).
-* Squash bugs.
+### Documentation coming soon.
