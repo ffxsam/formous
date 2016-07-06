@@ -125,8 +125,6 @@ const Formous = (options: Object): ReactClass => {
       const completedTests: Array<TestType> = this.testField(fieldSpec,
         target.value);
 
-      console.log('completed tests:', completedTests);
-
       this.setFieldsValidity(fieldSpec, completedTests);
       // this.markFieldAsValid(
       //   field.name,
