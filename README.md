@@ -128,7 +128,7 @@ const formousOptions = {
   },
 };
 
-export default Formous(fields)(MyComponent)
+export default Formous(formousOptions)(MyComponent)
 ```
 
 ### Documentation coming soon.
