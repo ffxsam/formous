@@ -90,6 +90,7 @@ class MyComponent extends Component {
 const formousOptions = {
   fields: {
     name: {
+      name: 'name',
       tests: [
         {
           critical: true,
@@ -104,6 +105,7 @@ const formousOptions = {
     },
 
     age: {
+      name: 'age',
       tests: [
         {
           critical: true,
