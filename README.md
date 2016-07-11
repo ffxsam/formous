@@ -17,7 +17,7 @@ Formous strives to be a _simple_, elegant solution to handling forms in React. F
 
 Use the code snippet below as an example to help you get started right away.
 
-```jsx
+```js
 import React, { Component } from 'react';
 import Formous from 'formous';
 
