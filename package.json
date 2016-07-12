@@ -4,11 +4,11 @@
   "description": "Simple and elegant form-handling for React",
   "main": "lib/index.js",
   "scripts": {
-    "build": "npm run lint && flow && npm test && npm run build:babel",
+    "build": "npm test && npm run build:babel",
     "build:babel": "babel ./src --out-dir ./lib --no-comments",
     "flow": "flow; test $? -eq 0 -o $? -eq 2",
     "lint": "eslint src",
-    "test": "mocha tests/.setup.js tests/**/*-tests.js"
+    "test": "npm run lint && flow && mocha tests/.setup.js tests/**/*-tests.js"
   },
   "repository": {
     "type": "git",
