@@ -1,4 +1,4 @@
-# Formous
+# Formous [![Build Status](https://travis-ci.org/ffxsam/formous.svg?branch=master)](https://travis-ci.org/ffxsam/formous)
 
 ### Simple and elegant form-handling for React
 
