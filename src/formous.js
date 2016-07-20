@@ -85,9 +85,9 @@ const Formous = (options: Object): ReactClass => {
       }
     }
 
-    isFormValid(options: ?{ excludeField: string }): boolean {
+    isFormValid(fields: Object, options: ?{ excludeField: string }): boolean {
       const excludeField: ?string = options && options.excludeField;
-      const stateFields: Object = this.state.fields.toJS();
+      const stateFields: Object = fields.toJS();
       const examineFields: Array<string> = Object.keys(stateFields)
         .filter((fieldName: string) => fieldName !== excludeField);
 
@@ -173,15 +173,14 @@ const Formous = (options: Object): ReactClass => {
           };
         }
 
+        const fields = this.state.fields.mergeDeep(defaults);
+
         this.setState({
-          fields: this.state.fields.mergeDeep(defaults),
-        }, () => {
-          this.setState({
-            form: {
-              ...this.state.form,
-              valid: this.isFormValid(),
-            },
-          });
+          fields,
+          form: {
+            ...this.state.form,
+            valid: this.isFormValid(fields),
+          },
         });
 
         this.defaultsSet = true;
@@ -217,7 +216,7 @@ const Formous = (options: Object): ReactClass => {
       this.setState({
         form: {
           ...this.state.form,
-          valid: this.isFormValid(),
+          valid: this.isFormValid(this.state.fields),
         },
       });
     }
