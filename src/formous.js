@@ -69,9 +69,15 @@ const Formous = (options: Object): ReactClass => {
         };
       }
 
+      const fields = fromJS(updatedFields);
+
       this.setState({
-        fields: fromJS(updatedFields),
-      }, this.setFormValidity);
+        fields,
+        form: {
+          ...this.state.form,
+          valid: this.isFormValid(fields),
+        },
+      });
     }
 
     formSubmit(formHandler: Function): Function {
@@ -111,14 +117,20 @@ const Formous = (options: Object): ReactClass => {
       failProps: ?Object,
       quietly: boolean,
     }) {
+      const fields = this.state.fields.mergeDeep({
+        [fieldName]: {
+          failProps: options.quietly ? undefined : options.failProps,
+          valid,
+        },
+      });
+
       this.setState({
-        fields: this.state.fields.mergeDeep({
-          [fieldName]: {
-            failProps: options.quietly ? undefined : options.failProps,
-            valid,
-          },
-        }),
-      }, this.setFormValidity);
+        fields,
+        form: {
+          ...this.state.form,
+          valid: this.isFormValid(fields),
+        },
+      });
     }
 
     onBlur(fieldSpec: Object, { target }: Object) {
@@ -142,12 +154,14 @@ const Formous = (options: Object): ReactClass => {
     }
 
     onFocus() {
-      this.setState({
-        form: {
-          ...this.state.form,
-          touched: true,
-        },
-      });
+      if (!this.state.form.touched) {
+        this.setState({
+          form: {
+            ...this.state.form,
+            touched: true,
+          },
+        });
+      }
     }
 
     setDefaultValues(defaultData: Object) {
@@ -204,21 +218,16 @@ const Formous = (options: Object): ReactClass => {
           };
         }
 
-        this.setState({
-          fields: this.state.fields.mergeDeep({
-            ...updatedFields,
-          }),
-        }, this.setFormValidity);
-      }
-    }
+        const fields = this.state.fields.mergeDeep(updatedFields);
 
-    setFormValidity() {
-      this.setState({
-        form: {
-          ...this.state.form,
-          valid: this.isFormValid(this.state.fields),
-        },
-      });
+        this.setState({
+          fields,
+          form: {
+            ...this.state.form,
+            valid: this.isFormValid(fields),
+          },
+        });
+      }
     }
 
     // Returns all tests that were run
