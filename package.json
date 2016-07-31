@@ -1,6 +1,6 @@
 {
   "name": "formous",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "description": "Simple and elegant form-handling for React",
   "main": "lib/index.js",
   "scripts": {
@@ -41,7 +41,7 @@
     "eslint": "^3.0.0",
     "eslint-plugin-flowtype": "^2.3.0",
     "eslint-plugin-react": "^5.2.2",
-    "flow-bin": "^0.27.0",
+    "flow-bin": "^0.30.0",
     "jsdom": "^9.4.1",
     "mocha": "^2.5.3",
     "react": "^15.2.0",
@@ -50,6 +50,7 @@
   "dependencies": {
     "immutable": "^3.8.1",
     "invariant": "^2.2.1",
+    "lodash": "^4.14.1",
     "meteor-react-prebind": "^1.0.2",
     "warning": "^3.0.0"
   },
