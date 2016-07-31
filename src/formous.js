@@ -8,8 +8,8 @@ import type { TestType } from './types';
 import runChecks, { warn } from './dx';
 import { allTestsPassed } from './helpers';
 
-const Formous = (options: Object): ReactClass => {
-  return (Wrapped: ReactClass) => class extends Component {
+const Formous = (options: Object): ReactClass<*> => {
+  return (Wrapped: ReactClass<*>) => class extends Component {
     // Flow annotations
     defaultsSet: boolean;
     fieldData: Object;
