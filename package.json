@@ -1,6 +1,6 @@
 {
   "name": "formous",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "description": "Simple and elegant form-handling for React",
   "main": "lib/index.js",
   "scripts": {
