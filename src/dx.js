@@ -4,7 +4,7 @@
 
 import warning from 'warning';
 import invariant from 'invariant';
-import _ from 'lodash';
+import findIndex from 'lodash/findIndex';
 import type { TestType } from './types';
 
 export function warn(test: boolean, message: string) {
@@ -63,7 +63,7 @@ export default function runChecks(options: Object) {
       '\'failProps\' property, and that they\'re objects.');
 
     // Make sure critical tests come before non-critical
-    nonCriticalInd = _.findIndex(tests, (test: Object) => !test.critical);
+    nonCriticalInd = findIndex(tests, (test: Object) => !test.critical);
 
     if (nonCriticalInd >= 0 && tests[nonCriticalInd + 1]) {
       for (let i: number = nonCriticalInd + 1; i < numTests; i++) {
