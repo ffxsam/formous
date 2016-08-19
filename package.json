@@ -1,6 +1,6 @@
 {
   "name": "formous",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "description": "Simple and elegant form-handling for React",
   "main": "lib/index.js",
   "scripts": {
@@ -8,7 +8,9 @@
     "build:babel": "babel ./src --out-dir ./lib --no-comments",
     "flow": "flow; test $? -eq 0 -o $? -eq 2",
     "lint": "eslint src",
-    "test": "npm run lint && flow && mocha tests/.setup.js tests/**/*-tests.js"
+    "test": "npm run lint && flow check && mocha tests/.setup.js tests/**/*-tests.js",
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
   },
   "repository": {
     "type": "git",
@@ -31,27 +33,26 @@
   "devDependencies": {
     "babel-cli": "^6.10.1",
     "babel-eslint": "^6.1.0",
-    "babel-plugin-transform-class-properties": "^6.10.2",
     "babel-plugin-transform-flow-strip-types": "^6.8.0",
     "babel-preset-es2015": "^6.9.0",
     "babel-preset-react": "^6.11.1",
-    "babel-preset-stage-2": "^6.11.0",
+    "babel-preset-stage-1": "^6.13.0",
     "babel-register": "^6.9.0",
     "chai": "^3.5.0",
     "eslint": "^3.0.0",
     "eslint-plugin-flowtype": "^2.3.0",
-    "eslint-plugin-react": "^5.2.2",
+    "eslint-plugin-react": "^6.1.2",
     "flow-bin": "^0.30.0",
     "jsdom": "^9.4.1",
-    "mocha": "^2.5.3",
+    "mocha": "^3.0.2",
     "react": "^15.2.0",
-    "react-dom": "^15.2.0"
+    "react-dom": "^15.2.0",
+    "@kadira/storybook": "^2.0.0"
   },
   "dependencies": {
     "immutable": "^3.8.1",
     "invariant": "^2.2.1",
     "lodash": "^4.14.1",
-    "meteor-react-prebind": "^1.0.2",
     "warning": "^3.0.0"
   },
   "peerDependencies": {

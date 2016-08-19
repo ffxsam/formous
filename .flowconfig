@@ -2,6 +2,7 @@
 # Absolute path support:
 # e.g. "/collections/todos"
 module.name_mapper='^\/\(.*\)$' -> '<PROJECT_ROOT>/\1'
+esproposal.class_instance_fields=enable
 
 [ignore]
 # Ignore problematic packages in node_modules
