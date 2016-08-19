@@ -163,7 +163,10 @@ const Formous = (options: Object): ReactClass<*> => {
         const defaults: Object = {};
 
         for (const fieldName: string in defaultData) {
-          const field: Object = options.fields[fieldName];
+          const field: Object = {
+            ...options.fields[fieldName],
+            name: fieldName,
+          };
           const tests: ?Array<TestType> = options.fields[fieldName] &&
             options.fields[fieldName].tests;
           let testResults: Array<TestType>;
@@ -248,7 +251,10 @@ const Formous = (options: Object): ReactClass<*> => {
        */
       if (fieldSpec.alsoTest && !initial && failedTestCount === 0) {
         fieldSpec.alsoTest.forEach((fieldName: string) => {
-          const fieldInfo: Object = options.fields[fieldName];
+          const fieldInfo: Object = {
+            ...options.fields[fieldName],
+            name: fieldName,
+          };
           const fieldValue: string =
             this.state.fields.getIn([fieldName, 'value']);
           let sideEffectTests: Array<TestType> =
