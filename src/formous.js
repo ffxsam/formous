@@ -1,7 +1,6 @@
 // @flow
 
 import React, { Component } from 'react';
-import prebind from 'meteor-react-prebind';
 import { Map, fromJS } from 'immutable';
 
 import type { TestType } from './types';
@@ -17,11 +16,8 @@ const Formous = (options: Object): ReactClass<*> => {
 
     constructor(props: Object) {
       super(props);
-      prebind(this);
 
       this.defaultsSet = false;
-      window.Formous = this;
-
       this.state = {
         fields: Map({}),
         form: {
@@ -55,7 +51,7 @@ const Formous = (options: Object): ReactClass<*> => {
         const events: Object = {
           onBlur: this.onBlur.bind(this, fieldSpec),
           onChange: this.onChange.bind(this, fieldSpec),
-          onFocus: this.onFocus.bind(this),
+          onFocus: this.onFocus.bind(this, fieldSpec),
         };
 
         // Set initial field validity
@@ -69,29 +65,43 @@ const Formous = (options: Object): ReactClass<*> => {
         };
       }
 
-      const fields = fromJS(updatedFields);
-
-      this.setState({
-        fields,
-        form: {
-          ...this.state.form,
-          valid: this.isFormValid(fields),
-        },
-      });
+      this.updateFields(fromJS(updatedFields));
     }
 
-    formSubmit(formHandler: Function): Function {
+    /*
+     * Submit handler.
+     */
+    handleSubmit = (formHandler: Function): Function => {
       return (event: Object) => {
         event.preventDefault();
+
+        let fields = undefined;
+        if (this.state.currentField) {
+          const value = this.state.fields.getIn(
+            [this.state.currentField.name, 'value']
+          );
+
+          fields = this.testFieldAndUpdateState(this.state.currentField, value);
+        }
+
+        const formState = {
+          ...this.state.form,
+          valid: this.isFormValid(fields || this.state.fields),
+        };
+
         formHandler(
-          this.state.form,
-          this.state.fields
+          formState,
+          (fields || this.state.fields)
             .map((field: Object) => ({ value: field.get('value') })).toJS()
         );
       }
-    }
+    };
 
-    isFormValid(fields: Object, options: ?{ excludeField: string }): boolean {
+    /*
+     * Just returns a boolean indicating whether the form is valid. Doesn't run
+     * any tests, just checks field validity (stored in state).
+     */
+    isFormValid = (fields: Object, options: ?{ excludeField: string }): boolean => { // eslint-disable-line
       const excludeField: ?string = options && options.excludeField;
       const stateFields: Object = fields.toJS();
       const examineFields: Array<string> = Object.keys(stateFields)
@@ -102,21 +112,19 @@ const Formous = (options: Object): ReactClass<*> => {
       const formValid = Object.keys(stateFields)
         .filter((fieldName: string) => fieldName !== excludeField)
         .map((fieldName: string) => stateFields[fieldName])
-        .reduce((a: any, b: Object) => {
-          return (typeof a === 'object' ? a.valid : a) && b.valid;
-        });
+        .every((field: Object) => field.valid);
 
       /*
        * If we only have one field, .reduce() will have returned an object, not
        * a boolean.
        */
       return typeof formValid === 'boolean' ? formValid : formValid.valid;
-    }
+    };
 
-    markFieldAsValid(fieldName: string, valid: boolean, options: {
+    markFieldAsValid = (fieldName: string, valid: boolean, options: {
       failProps: ?Object,
       quietly: boolean,
-    }) {
+    }) => {
       const fields = this.state.fields.mergeDeep({
         [fieldName]: {
           failProps: options.quietly ? undefined : options.failProps,
@@ -124,47 +132,32 @@ const Formous = (options: Object): ReactClass<*> => {
         },
       });
 
-      this.setState({
-        fields,
-        form: {
-          ...this.state.form,
-          valid: this.isFormValid(fields),
-        },
-      });
-    }
+      this.updateFields(fields);
+    };
 
-    onBlur(fieldSpec: Object, { target }: Object) {
-      const completedTests: Array<TestType> = this.testField(fieldSpec,
-        target.value);
+    onBlur = (fieldSpec: Object, { target }: Object) => {
+      this.setState({ currentField: undefined });
+      this.testFieldAndUpdateState(fieldSpec, target.value);
+    };
 
-      this.setFieldsValidity(fieldSpec, completedTests);
-      // this.markFieldAsValid(
-      //   field.name,
-      //   failedTest ? !failedTest.critical : true,
-      //   {
-      //     failProps: failedTest && failedTest.failProps,
-      //   });
-    }
-
-    onChange(fieldSpec: Object, { target }: Object) {
+    onChange = (fieldSpec: Object, { target }: Object) => {
       this.setState({
         fields: this.state.fields.setIn([fieldSpec.name, 'value'],
           target.value),
       });
-    }
+    };
 
-    onFocus() {
-      if (!this.state.form.touched) {
-        this.setState({
-          form: {
-            ...this.state.form,
-            touched: true,
-          },
-        });
-      }
-    }
+    onFocus = (fieldSpec: Object) => {
+      this.setState({
+        currentField: fieldSpec,
+        form: {
+          ...this.state.form,
+          touched: true,
+        },
+      });
+    };
 
-    setDefaultValues(defaultData: Object) {
+    setDefaultValues = (defaultData: Object) => {
       // Prevent settings defaults twice
       if (!this.defaultsSet) {
         const defaults: Object = {};
@@ -189,23 +182,19 @@ const Formous = (options: Object): ReactClass<*> => {
 
         const fields = this.state.fields.mergeDeep(defaults);
 
-        this.setState({
-          fields,
-          form: {
-            ...this.state.form,
-            valid: this.isFormValid(fields),
-          },
-        });
-
+        this.updateFields(fields);
         this.defaultsSet = true;
       }
-    }
+    };
 
-    setFieldsValidity(fieldSpec: Object, tests: Array<TestType>) {
+    /*
+     * Take an array of test results and update the state with the form validity
+     * and individual field's validity and failProps.
+     */
+    setFieldsValidity = (tests: Array<TestType>) => {
       const updatedFields = {};
 
       if (tests.length === 0) {
-        // All tests passed for this field
         warn(false, 'We should never see this? If you see this, please submit' +
           'an issue at https://github.com/ffxsam/formous/issues');
       } else {
@@ -219,20 +208,15 @@ const Formous = (options: Object): ReactClass<*> => {
         }
 
         const fields = this.state.fields.mergeDeep(updatedFields);
+        this.updateFields(fields);
 
-        this.setState({
-          fields,
-          form: {
-            ...this.state.form,
-            valid: this.isFormValid(fields),
-          },
-        });
+        return fields;
       }
-    }
+    };
 
     // Returns all tests that were run
-    testField(fieldSpec: Object, value: string,
-      initial: ?boolean): Array<TestType> {
+    testField = (fieldSpec: Object, value: string,
+      initial: ?boolean): Array<TestType> => {
       /*
        * testField will actually start at a single field and run its tests, but
        * due to the alsoTest field, there can be chaining. So testField will
@@ -275,24 +259,43 @@ const Formous = (options: Object): ReactClass<*> => {
             .map((test: Object) => ({ ...test, quiet: true }));
 
           completedTests = [...completedTests, ...sideEffectTests];
-          // this.markFieldAsValid(
-          //   fieldName,
-          //   failedTest ? !failedTest.critical : true,
-          //   {
-          //     failProps: failedTest && failedTest.failProps,
-          //     quietly: false,
-          //   });
         });
       }
 
       return completedTests;
-    }
+    };
+
+    testFieldAndUpdateState = (fieldSpec: Object, value: string) => {
+      const completedTests: Array<TestType> = this.testField(fieldSpec, value);
+      return this.setFieldsValidity(completedTests);
+    };
+
+    /*
+     * Update fields in state.
+     */
+    updateFields = (fields: Object) => {
+      this.setState({
+        fields,
+      }, this.updateFormValidity);
+    };
+
+    /*
+     * Updates the form validity based on the current field values (in state).
+     */
+    updateFormValidity = () => {
+      this.setState({
+        form: {
+          ...this.state.form,
+          valid: this.isFormValid(this.state.fields),
+        },
+      });
+    };
 
     render() {
       return <Wrapped
         { ...this.props }
         fields={this.state.fields.toJS()}
-        formSubmit={this.formSubmit}
+        formSubmit={this.handleSubmit}
         setDefaultValues={this.setDefaultValues}
       />
     }

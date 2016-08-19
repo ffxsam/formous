@@ -42,10 +42,12 @@ export default function runChecks(options: Object) {
     let nonCriticalInd: number;
 
     // Check for 'name' property
-    inv(!!field.name,
-      `The "${fieldName}" field is missing a "name" property. For ` +
-      'example:\nfields: {\n  email: {\n    name: \'email\',\n' +
-      '    tests: [ /*...*/ ],\n  },\n}');
+    // inv(!!field.name,
+    //   `The "${fieldName}" field is missing a "name" property. For ` +
+    //   'example:\nfields: {\n  email: {\n    name: \'email\',\n' +
+    //   '    tests: [ /*...*/ ],\n  },\n}');
+    warn(!field.name, `Object property 'name' (declared on the "${fieldName}"` +
+      ' field) is no longer required.');
 
     // Make sure we even have tests
     warn(numTests > 0,
