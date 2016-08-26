@@ -282,19 +282,18 @@ const Formous = (options: Object): ReactClass<*> => {
     updateFields = (fields: Object) => {
       this.setState({
         fields,
-      }, this.updateFormValidity);
+        form: this.updateFormValidity(fields),
+      });
     };
 
     /*
-     * Updates the form validity based on the current field values (in state).
+     * Returns an updated form state.
      */
-    updateFormValidity = () => {
-      this.setState({
-        form: {
-          ...this.state.form,
-          valid: this.isFormValid(this.state.fields),
-        },
-      });
+    updateFormValidity = (fields: Object) => {
+      return {
+        ...this.state.form,
+        valid: this.isFormValid(fields),
+      };
     };
 
     render() {
