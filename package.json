@@ -8,7 +8,7 @@
     "build:babel": "babel ./src --out-dir ./lib --no-comments",
     "flow": "flow; test $? -eq 0 -o $? -eq 2",
     "lint": "eslint src",
-    "test": "npm run lint && flow check && mocha tests/.setup.js tests/**/*-tests.js",
+    "test": "npm run lint && flow check && mocha --compilers js:babel-core/register tests/**/*-tests.js",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook"
   },
@@ -43,7 +43,6 @@
     "eslint-plugin-flowtype": "^2.3.0",
     "eslint-plugin-react": "^6.1.2",
     "flow-bin": "^0.30.0",
-    "jsdom": "^9.4.1",
     "mocha": "^3.0.2",
     "react": "^15.2.0",
     "react-dom": "^15.2.0",
