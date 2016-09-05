@@ -1,6 +1,6 @@
 {
   "name": "formous",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "description": "Simple and elegant form-handling for React",
   "main": "lib/index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "build:babel": "babel ./src --out-dir ./lib --no-comments",
     "flow": "flow; test $? -eq 0 -o $? -eq 2",
     "lint": "eslint src",
-    "test": "npm run lint && flow check && mocha --compilers js:babel-core/register tests/**/*-tests.js",
+    "test": "npm run lint && flow check && mocha --compilers js:babel-register tests/**/*-tests.js",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook"
   },

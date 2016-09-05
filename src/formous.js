@@ -28,7 +28,7 @@ const Formous = (options: Object): ReactClass<*> => {
     }
 
     componentWillMount() {
-      const updatedFields = {};
+      let updatedFields;
 
       // Deprecation warning
       if (!options.fields) {
@@ -39,34 +39,14 @@ const Formous = (options: Object): ReactClass<*> => {
 
       // Syntax checking.. for a positive developer experience!
       runChecks(options);
-
-      // Loop through each of the fields passed in
-      for (const fieldName: string in options.fields) {
-        const fieldSpec: Object = {
-          ...options.fields[fieldName],
-          name: fieldName,
-        };
-
-        // Events that should be attached to the input fields
-        const events: Object = {
-          onBlur: this.onBlur.bind(this, fieldSpec),
-          onChange: this.onChange.bind(this, fieldSpec),
-          onFocus: this.onFocus.bind(this, fieldSpec),
-        };
-
-        // Set initial field validity
-        const testResults: Array<TestType> = this.testField(fieldSpec, '',
-          true);
-
-        updatedFields[fieldName] = {
-          events,
-          valid: allTestsPassed(testResults),
-          value: this.state.fields.getIn([fieldName, 'value']) || '',
-        };
-      }
-
+      updatedFields = this.initializeFields();
       this.updateFields(fromJS(updatedFields));
     }
+
+    clearForm = () => {
+      const updatedFields = this.initializeFields(true);
+      this.updateFields(fromJS(updatedFields));
+    };
 
     /*
      * Submit handler.
@@ -95,6 +75,39 @@ const Formous = (options: Object): ReactClass<*> => {
             .map((field: Object) => ({ value: field.get('value') })).toJS()
         );
       }
+    };
+
+    initializeFields = (reset: ?boolean): Object => {
+      const updatedFields = {};
+
+      // Loop through each of the fields passed in
+      for (const fieldName: string in options.fields) {
+        const fieldSpec: Object = {
+          ...options.fields[fieldName],
+          name: fieldName,
+        };
+
+        // Events that should be attached to the input fields
+        const events: Object = {
+          onBlur: this.onBlur.bind(this, fieldSpec),
+          onChange: this.onChange.bind(this, fieldSpec),
+          onFocus: this.onFocus.bind(this, fieldSpec),
+        };
+
+        // Set initial field validity
+        const testResults: Array<TestType> = this.testField(fieldSpec, '',
+          true);
+
+        updatedFields[fieldName] = {
+          events,
+          valid: allTestsPassed(testResults),
+          value: reset
+            ? ''
+            : (this.state.fields.getIn([fieldName, 'value']) || ''),
+        };
+      }
+
+      return updatedFields;
     };
 
     /*
@@ -299,8 +312,10 @@ const Formous = (options: Object): ReactClass<*> => {
     render() {
       return <Wrapped
         { ...this.props }
+        clearForm={this.clearForm}
         fields={this.state.fields.toJS()}
         formSubmit={this.handleSubmit}
+        formState={this.state.form}
         setDefaultValues={this.setDefaultValues}
       />
     }
