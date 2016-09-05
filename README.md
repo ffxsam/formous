@@ -377,6 +377,10 @@ All annotations use [Flow](https://flowtype.org/) syntax.
 
 ### Formous-Supplied Props
 
+#### `clearForm: Function`
+
+* Call with no arguments. Sets all fields to empty.
+
 #### `fields: Object`
 
 * `<field name>`
@@ -390,6 +394,22 @@ All annotations use [Flow](https://flowtype.org/) syntax.
   * `formStatus: { touched: boolean, valid: boolean }`
     * `touched` - indicates whether the form has been "touched" at all (if any fields have received focus)
     * `valid` - indicates whether the field is valid
+
+#### `formState: Object`
+
+* `touched: boolean` - whether the form has been touched (field focused)
+* `valid: boolean` - whether the form is valid
+
+#### `setDefaultValues: (fields: Object)`
+
+* `fields` - name/value pairs, e.g.:
+
+```js
+this.props.setDefaultValues({
+  name: 'My Name',
+  age: 30,
+});
+```
 
 ### Formous Wrapper Options
 
