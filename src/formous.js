@@ -116,6 +116,7 @@ const Formous = (options: Object): ReactClass<*> => {
           onBlur: this.onBlur.bind(this, fieldSpec),
           onChange: this.onChange.bind(this, fieldSpec),
           onFocus: this.onFocus.bind(this, fieldSpec),
+          onValidatedChange: this.onValidatedChange.bind(this, fieldSpec),
         };
 
         // Set initial field validity
@@ -171,6 +172,25 @@ const Formous = (options: Object): ReactClass<*> => {
 
       this.updateFields(fields);
     };
+
+    onValidatedChange = (fieldSpec: Object, { target }: Object) => {
+      const fieldTests: Array<TestType> =
+        this.testField(fieldSpec, target.value);
+      const test = fieldTests[fieldTests.length - 1];
+
+      const updatedField = this.state.fields.get(fieldSpec.name).merge(
+        Map({
+          value: target.value,
+          failProps: test.passed || test.quiet
+            ? undefined
+            : test.failProps,
+          valid: test.passed,
+        })
+      );
+      this.setState({
+        fields: this.state.fields.set(fieldSpec.name, updatedField),
+      });
+    }
 
     onBlur = (fieldSpec: Object, { target }: Object) => {
       this.setState({ currentField: undefined });
