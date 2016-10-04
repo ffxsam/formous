@@ -192,6 +192,31 @@ const Formous = (options: Object): ReactClass<*> => {
       });
     }
 
+    updateFormFields = (values: Object) => {
+      const updatedFields = Map(values)
+        .reduce((reduction: Object, value: any, fieldName: string) => {
+          const fieldSpec: Object = options.fields[fieldName];
+          const fieldTests: Array<TestType> =
+            this.testField(fieldSpec, value);
+          const test = fieldTests[fieldTests.length - 1];
+          const updatedField = reduction.get(fieldName).merge(
+            Map({
+              value,
+              failProps: test.passed || test.quiet
+                ? undefined
+                : test.failProps,
+              valid: test.passed,
+            })
+          );
+          return reduction.set(fieldName, updatedField);
+        }, this.state.fields);
+
+      this.setState({
+        fields: updatedFields,
+        form: this.updateFormValidity(updatedFields),
+      });
+    }
+
     onBlur = (fieldSpec: Object, { target }: Object) => {
       this.setState({ currentField: undefined });
       this.testFieldAndUpdateState(fieldSpec, target.value);
@@ -360,6 +385,7 @@ const Formous = (options: Object): ReactClass<*> => {
         fields={this.state.fields.toJS()}
         formSubmit={this.handleSubmit}
         formState={this.state.form}
+        updateFormFields={this.updateFormFields}
         setDefaultValues={this.setDefaultValues}
       />
     }

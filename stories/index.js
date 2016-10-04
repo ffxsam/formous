@@ -61,6 +61,78 @@ storiesOf('Formous', module)
     return <Wrapped />
   })
 
+  .add('update multiple fields', () => {
+    const options = {
+      fields: {
+        name: {
+          tests: [requiredField],
+        },
+        description: {
+          tests: [requiredField],
+        },
+      },
+    };
+    const Example = ({ fields, formSubmit, clearForm, updateFormFields }) => {
+      const submit = (formStatus) => {
+        action('form submit: ', JSON.stringify(formStatus));
+      };
+
+      const codeBlock = `this.props.updateFormFields({
+  name: '',
+  description: 'this is a description',
+});`
+
+      return <div>
+        <form onSubmit={formSubmit(submit)}>
+          <div>
+            <p>
+              Use <code>this.props.updateFormFields(values: Object)</code> to
+              update the value of multiple fields at once.
+            </p>
+
+            <p>This will also run validations and update the form status</p>
+
+            <pre>
+              <code>
+                {codeBlock}
+              </code>
+            </pre>
+            <button
+              onClick={() => {
+                updateFormFields({
+                  name: '',
+                  description: 'this is a description',
+                });
+              }}>
+              set the value of multiple fields
+            </button><br />
+            <input
+              type="text"
+              value={fields.name.value}
+              { ...fields.name.events }
+            />
+            <Error { ...fields.name.failProps } />
+            <br />
+            <input
+              type="text"
+              value={fields.description.value}
+              { ...fields.description.events }
+            />
+            <Error { ...fields.description.failProps } />
+          </div>
+
+          <div>
+            <input type="submit" />
+            <button type="button" onClick={clearForm}>Reset</button>
+          </div>
+        </form>
+      </div>
+    };
+    const Wrapped = Formous(options)(Example);
+
+    return <Wrapped />
+  })
+
   .add('test chaining', () => {
     const options = {
       fields: {
