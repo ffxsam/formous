@@ -4,6 +4,7 @@
   "description": "Simple and elegant form-handling for React",
   "main": "lib/index.js",
   "scripts": {
+    "prepublish": "npm run build",
     "build": "npm test && npm run build:babel",
     "build:babel": "babel ./src --out-dir ./lib --no-comments",
     "flow": "flow; test $? -eq 0 -o $? -eq 2",
