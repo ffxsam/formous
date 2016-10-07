@@ -8,3 +8,8 @@ export type TestType = {
   quiet: boolean,
   test: (value: string, fields: ?Object) => boolean,
 };
+
+export type TestResultType = {
+  passed: boolean,
+  failProps: ?Object,
+};

@@ -3,7 +3,7 @@
 import React, { Component } from 'react';
 import { Map, fromJS } from 'immutable';
 
-import type { TestType } from './types';
+import type { TestType, TestResultType } from './types';
 import runChecks, { warn } from './dx';
 import { allTestsPassed } from './helpers';
 
@@ -49,35 +49,20 @@ const Formous = (options: Object): ReactClass<*> => {
     };
 
     validateForm = () => {
-      const fields = this.state.fields;
-      const updatedFields = fields.reduce(
-        (acc: Object, field: Object, name: string) => {
-          const fieldTests: Object[] = this.testField(options.fields[name],
-                                                      field.get('value'));
-          const test = fieldTests[fieldTests.length - 1];
+      const fields = this.state.fields.reduce(
+        (updated: Object, field: Object, name: string) => {
+          return updated.setIn([name, 'dirty'], true);
+        }, this.state.fields);
+      const updatedFields = this.validate(fields);
 
-          const updatedField = this.state.fields.get(name).mergeDeep(
-            Map({
-              failProps: test.passed || test.quiet
-                ? undefined
-                : test.failProps,
-              valid: test.passed,
-            })
-          );
-          return acc.set(name, updatedField);
-        }, Map({}));
-
-      const updated = {
-        fields: updatedFields,
-        form: {
-          ...this.updateFormValidity(updatedFields),
-          touched: true,
-        },
+      const formState = {
+        ...this.updateFormValidity(updatedFields),
+        touched: true,
       };
 
       return {
-        fields: updated.fields,
-        formState: updated.form,
+        fields: updatedFields,
+        formState,
       };
     }
 
@@ -108,6 +93,7 @@ const Formous = (options: Object): ReactClass<*> => {
       for (const fieldName: string in options.fields) {
         const fieldSpec: Object = {
           ...options.fields[fieldName],
+          dirty: false,
           name: fieldName,
         };
 
@@ -174,17 +160,18 @@ const Formous = (options: Object): ReactClass<*> => {
     };
 
     onValidatedChange = (fieldSpec: Object, { target }: Object) => {
-      const fieldTests: Array<TestType> =
-        this.testField(fieldSpec, target.value);
-      const test = fieldTests[fieldTests.length - 1];
+      const testResult: TestResultType = this.checkField(
+        this.state.fields.get(fieldSpec.name),
+        fieldSpec,
+        this.state.fields,
+      );
 
       const updatedField = this.state.fields.get(fieldSpec.name).merge(
         Map({
+          dirty: true,
           value: target.value,
-          failProps: test.passed || test.quiet
-            ? undefined
-            : test.failProps,
-          valid: test.passed,
+          failProps: testResult.failProps,
+          valid: testResult.passed,
         })
       );
       this.setState({
@@ -193,23 +180,29 @@ const Formous = (options: Object): ReactClass<*> => {
     }
 
     updateFormFields = (values: Object) => {
-      const updatedFields = Map(values)
-        .reduce((reduction: Object, value: any, fieldName: string) => {
+      const mapValues = Map(values);
+      const fields = mapValues.reduce(
+        (allFields: Object, value: any, fieldName: string) => {
+          return allFields.setIn([fieldName, 'value'], value);
+        }, this.state.fields);
+
+      const updatedFields = mapValues
+        .reduce((allFields: Object, value: any, fieldName: string) => {
           const fieldSpec: Object = options.fields[fieldName];
-          const fieldTests: Array<TestType> =
-            this.testField(fieldSpec, value);
-          const test = fieldTests[fieldTests.length - 1];
-          const updatedField = reduction.get(fieldName).merge(
+          const field = allFields.get(fieldName);
+          const testResult: TestResultType = this.checkField(
+            field, fieldSpec, allFields);
+          const updatedField = allFields.get(fieldName).merge(
             Map({
               value,
-              failProps: test.passed || test.quiet
+              failProps: testResult.quiet
                 ? undefined
-                : test.failProps,
-              valid: test.passed,
+                : testResult.failProps,
+              valid: testResult.passed,
             })
           );
-          return reduction.set(fieldName, updatedField);
-        }, this.state.fields);
+          return allFields.set(fieldName, updatedField);
+        }, fields);
 
       this.setState({
         fields: updatedFields,
@@ -218,8 +211,19 @@ const Formous = (options: Object): ReactClass<*> => {
     }
 
     onBlur = (fieldSpec: Object, { target }: Object) => {
-      this.setState({ currentField: undefined });
-      this.testFieldAndUpdateState(fieldSpec, target.value);
+      const field = this.state.fields.get(fieldSpec.name);
+      const updatedFields = this.state.fields.set(
+        fieldSpec.name, field.merge({
+          value: target.value,
+          dirty: true,
+        })
+      );
+      const validatedFields = this.validate(updatedFields);
+      this.setState({
+        currentField: undefined,
+        fields: validatedFields,
+        form: this.updateFormValidity(validatedFields),
+      });
     };
 
     onChange = (fieldSpec: Object, { target }: Object) => {
@@ -272,31 +276,64 @@ const Formous = (options: Object): ReactClass<*> => {
       }
     };
 
-    /*
-     * Take an array of test results and update the state with the form validity
-     * and individual field's validity and failProps.
-     */
-    setFieldsValidity = (tests: Array<TestType>) => {
-      const updatedFields = {};
+    // iterate over all fields, run validation over each
+    validate = (fields: Object) => {
+      const valids = Map(options.fields).reduce((
+        allFields: Object, fieldSpec: Object, name: String) => {
+        const field = allFields.get(name);
+        const dirty = field.get('dirty');
+        if (!dirty) {
+          return allFields.set(name, field);
+        }
+        const valid: TestResultType = this.checkField(
+          field, fieldSpec, allFields);
 
-      if (tests.length === 0) {
-        warn(false, 'We should never see this? If you see this, please submit' +
-          'an issue at https://github.com/ffxsam/formous/issues');
-      } else {
-        for (const test: TestType of tests) {
-          updatedFields[test.fieldName] = {
-            failProps: test.passed || test.quiet
-              ? undefined
-              : test.failProps,
-            valid: test.passed,
-          };
+        const validatedFields = allFields.set(
+          name,
+          field.merge(Map({
+            valid: valid.passed,
+            failProps: valid.failProps,
+          }),
+        ));
+
+        if (fieldSpec.alsoTest) {
+          const alsoValidatedFields = fieldSpec.alsoTest.reduce(
+            (alsoFields: Object, fieldName: string) => {
+              const alsoField = allFields.get(fieldName);
+              const alsoFieldSpec = options.fields[fieldName];
+              const alsoResult = this.checkField(
+                alsoField, alsoFieldSpec, alsoFields);
+              const allAlsoFields = alsoFields.set(
+                fieldName,
+                alsoField.merge(Map({
+                  valid: alsoResult.passed,
+                  failProps: alsoResult.failProps,
+                })),
+              );
+              return allAlsoFields;
+            }, validatedFields);
+          return alsoValidatedFields;
         }
 
-        const fields = this.state.fields.mergeDeep(updatedFields);
-        this.updateFields(fields);
+        return validatedFields;
+      }, fields);
+      return valids;
+    };
 
-        return fields;
-      }
+    checkField = (
+      field: Object, fieldSpec: Object, fields: Object): TestResultType => {
+      return fieldSpec.tests.reduce(
+        (result: TestResultType, testSpec: TestType) => {
+          if (result.passed) {
+            const testResult: boolean =
+              testSpec.test(field.get('value'), fields.toJS());
+            return {
+              passed: testResult,
+              failProps: !testResult ? testSpec.failProps : undefined,
+            };
+          }
+          return result;
+        }, { passed: true, failProps: undefined });
     };
 
     // Returns all tests that were run
@@ -351,11 +388,6 @@ const Formous = (options: Object): ReactClass<*> => {
       }
 
       return completedTests;
-    };
-
-    testFieldAndUpdateState = (fieldSpec: Object, value: string) => {
-      const completedTests: Array<TestType> = this.testField(fieldSpec, value);
-      return this.setFieldsValidity(completedTests);
     };
 
     /*
