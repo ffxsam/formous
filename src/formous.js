@@ -160,22 +160,25 @@ const Formous = (options: Object): ReactClass<*> => {
     };
 
     onValidatedChange = (fieldSpec: Object, { target }: Object) => {
+      const field = this.state.fields.get(fieldSpec.name).merge(Map({
+        value: target.value,
+        dirty: true,
+      }));
+      const fields = this.state.fields.set(fieldSpec.name, field);
       const testResult: TestResultType = this.checkField(
-        this.state.fields.get(fieldSpec.name),
+        field,
         fieldSpec,
-        this.state.fields,
+        fields,
       );
 
-      const updatedField = this.state.fields.get(fieldSpec.name).merge(
+      const updatedField = field.merge(
         Map({
-          dirty: true,
-          value: target.value,
           failProps: testResult.failProps,
           valid: testResult.passed,
         })
       );
       this.setState({
-        fields: this.state.fields.set(fieldSpec.name, updatedField),
+        fields: fields.set(fieldSpec.name, updatedField),
       });
     }
 
