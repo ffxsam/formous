@@ -213,10 +213,10 @@ const Formous = (options: Object): ReactClass<*> => {
     onBlur = (fieldSpec: Object, { target }: Object) => {
       const field = this.state.fields.get(fieldSpec.name);
       const updatedFields = this.state.fields.set(
-        fieldSpec.name, field.merge({
+        fieldSpec.name, field.merge(Map({
           value: target.value,
           dirty: true,
-        })
+        }))
       );
       const validatedFields = this.validate(updatedFields);
       this.setState({
@@ -263,10 +263,10 @@ const Formous = (options: Object): ReactClass<*> => {
             testResults = [];
           }
 
-          defaults[fieldName] = {
+          defaults[fieldName] = Map({
             valid: allTestsPassed(testResults),
             value: defaultData[fieldName],
-          };
+          });
         }
 
         const fields = this.state.fields.mergeDeep(defaults);
