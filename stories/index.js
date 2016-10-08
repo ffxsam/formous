@@ -21,18 +21,11 @@ storiesOf('Formous', module)
         name: {
           tests: [requiredField],
         },
-        description: {
-          tests: [requiredField],
-        },
       },
     };
     const Example = ({ fields, formSubmit, clearForm }) => {
-      const submit = (formStatus) => {
-        action('form submit: ', JSON.stringify(formStatus));
-      };
-
       return <div>
-        <form onSubmit={formSubmit(submit)}>
+        <form onSubmit={formSubmit(action('form submit'))}>
           <div>
             <input
               type="text"
@@ -40,13 +33,6 @@ storiesOf('Formous', module)
               { ...fields.name.events }
             />
             <Error { ...fields.name.failProps } />
-            <br />
-            <input
-              type="text"
-              value={fields.description.value}
-              { ...fields.description.events }
-            />
-            <Error { ...fields.description.failProps } />
           </div>
 
           <div>
