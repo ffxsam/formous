@@ -48,39 +48,6 @@ const Formous = (options: Object): ReactClass<*> => {
       this.updateFields(fromJS(updatedFields));
     };
 
-    validateForm = () => {
-      const fields = this.state.fields;
-      const updatedFields = fields.reduce(
-        (acc: Object, field: Object, name: string) => {
-          const fieldTests: Object[] = this.testField(options.fields[name],
-                                                      field.get('value'));
-          const test = fieldTests[fieldTests.length - 1];
-
-          const updatedField = this.state.fields.get(name).mergeDeep(
-            Map({
-              failProps: test.passed || test.quiet
-                ? undefined
-                : test.failProps,
-              valid: test.passed,
-            })
-          );
-          return acc.set(name, updatedField);
-        }, Map({}));
-
-      const updated = {
-        fields: updatedFields,
-        form: {
-          ...this.updateFormValidity(updatedFields),
-          touched: true,
-        },
-      };
-
-      return {
-        fields: updated.fields,
-        formState: updated.form,
-      };
-    }
-
     /*
      * Submit handler.
      */
@@ -88,16 +55,25 @@ const Formous = (options: Object): ReactClass<*> => {
       return (event: Object) => {
         event.preventDefault();
 
-        const { fields, formState }:
-          { fields: Object, formState: Object } = this.validateForm();
-
-        this.setState({ fields, form: formState }, () => {
-          formHandler(
-            formState,
-            fields
-              .map((field: Object) => ({ value: field.get('value') })).toJS()
+        let fields = undefined;
+        if (this.state.currentField) {
+          const value = this.state.fields.getIn(
+            [this.state.currentField.name, 'value']
           );
-        });
+
+          fields = this.testFieldAndUpdateState(this.state.currentField, value);
+        }
+
+        const formState = {
+          ...this.state.form,
+          valid: this.isFormValid(fields || this.state.fields),
+        };
+
+        formHandler(
+          formState,
+          (fields || this.state.fields)
+            .map((field: Object) => ({ value: field.get('value') })).toJS()
+        );
       }
     };
 
