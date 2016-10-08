@@ -61,7 +61,6 @@
     "jsx-quotes": 2,
     "key-spacing": 2,
     "keyword-spacing": 2,
-    "linebreak-style": [2, "unix"],
     "lines-around-comment": [2, {
       "allowBlockEnd": true,
       "allowBlockStart": true,
