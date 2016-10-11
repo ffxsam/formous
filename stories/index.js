@@ -168,6 +168,47 @@ storiesOf('Formous', module)
     return <Wrapped />
   })
 
+  .add('validate on hover', () => {
+    const options = {
+      fields: {
+        title: {
+          tests: [requiredField],
+        },
+        body: {
+          tests: [requiredField],
+        },
+      },
+    };
+
+    const Example = (props) => {
+      return <div>
+        <p>Force fields to validate.</p>
+        <p>
+          This is useful if you want to force validation on an event that isn't
+          a form submission.
+        </p>
+        <input value={props.fields.title.value} />
+        <Error { ...props.fields.title.failProps } />
+        <br />
+
+        <input value={props.fields.body.value} />
+        <Error { ...props.fields.body.failProps } />
+        <br />
+
+        <pre><code>{JSON.stringify(props.fields)}</code></pre>
+        <button onMouseOver={() => {
+          props.updateFormFields({
+            title: props.fields.title.value,
+            body: props.fields.body.value,
+          });
+        }}>Submit</button>
+      </div>;
+    };
+
+    const Wrapped = Formous(options)(Example);
+    return <Wrapped />;
+  })
+
   .add('default values', () => {
     const options = {
       fields: {

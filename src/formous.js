@@ -186,7 +186,11 @@ const Formous = (options: Object): ReactClass<*> => {
       const mapValues = Map(values);
       const fields = mapValues.reduce(
         (allFields: Object, value: any, fieldName: string) => {
-          return allFields.setIn([fieldName, 'value'], value);
+          const field = allFields.get(fieldName);
+          return allFields.set(
+            fieldName,
+            field.merge(Map({ value, dirty: true }))
+          );
         }, this.state.fields);
 
       const updatedFields = mapValues
