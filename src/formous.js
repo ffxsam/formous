@@ -119,7 +119,6 @@ const Formous = (options: Object): ReactClass<*> => {
       // Set initial field validity
       const validatedFields = updatedFields.reduce(
         (fields: Object, field: Object, fieldName: string) => {
-          // return this.onChangeField(field, fieldName, fields);
           return fields.setIn([fieldName, 'valid'], true);
         }, updatedFields);
       return validatedFields;
@@ -232,7 +231,6 @@ const Formous = (options: Object): ReactClass<*> => {
         const validatedFields = updatedFields.reduce(
           (fields: Object, field: Object, fieldName: string) => {
             return this.onChangeField(field, fieldName, fields);
-            // return fields.set(fieldName, validatedField);
           }, updatedFields);
         this.updateFields(validatedFields);
         this.defaultsSet = true;
