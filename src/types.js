@@ -10,6 +10,15 @@ export type TestType = {
 };
 
 export type TestResultType = {
-  passed: boolean,
+  valid: boolean,
   failProps: ?Object,
+};
+
+export type FieldSpecType = {
+  name: string,
+  tests: Function[],
+};
+
+export type UserEventType = {
+  target: {value: any},
 };
