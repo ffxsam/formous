@@ -48,7 +48,7 @@ const Formous = (options: Object): ReactClass<*> => {
     clearForm = () => {
       const updatedFields = this.initializeFields(true);
       this.updateFields(fromJS(updatedFields));
-    };
+    }
 
     /*
      * Check form validity along with its fields.
@@ -66,7 +66,7 @@ const Formous = (options: Object): ReactClass<*> => {
           touched: true,
         },
       };
-    };
+    }
 
     /*
      * Submit handler.
@@ -89,7 +89,7 @@ const Formous = (options: Object): ReactClass<*> => {
           );
         });
       }
-    };
+    }
 
     initializeFields = (reset: ?boolean): Object => {
       const updatedFields = Map(options.fields).reduce(
@@ -123,11 +123,11 @@ const Formous = (options: Object): ReactClass<*> => {
           return fields.setIn([fieldName, 'valid'], true);
         }, updatedFields);
       return validatedFields;
-    };
+    }
 
     getFieldSpec = (name: string): FieldSpecType => {
       return options.fields[name];
-    };
+    }
 
     /*
      * Just returns a boolean indicating whether the form is valid. Doesn't run
@@ -151,7 +151,7 @@ const Formous = (options: Object): ReactClass<*> => {
        * a boolean.
        */
       return typeof formValid === 'boolean' ? formValid : formValid.valid;
-    };
+    }
 
     onValidatedChange = (fieldSpec: Object, { target }: UserEventType) => {
       const field = this.state.fields.get(fieldSpec.name).merge(Map({
@@ -204,7 +204,7 @@ const Formous = (options: Object): ReactClass<*> => {
         fields: validatedFields,
         form: this.updateFormValidity(validatedFields),
       });
-    };
+    }
 
     onChange = (fieldSpec: Object, { target }: UserEventType) => {
       const updatedField = this.state.fields.get(fieldSpec.name).merge(Map({
@@ -214,13 +214,13 @@ const Formous = (options: Object): ReactClass<*> => {
       this.setState({
         fields: this.state.fields.set(fieldSpec.name, updatedField),
       });
-    };
+    }
 
     onFocus = (fieldSpec: Object) => {
       this.setState({
         currentField: fieldSpec,
       });
-    };
+    }
 
     setDefaultValues = (defaultData: Object) => {
       // Prevent settings defaults twice
@@ -237,11 +237,11 @@ const Formous = (options: Object): ReactClass<*> => {
         this.updateFields(validatedFields);
         this.defaultsSet = true;
       }
-    };
+    }
 
     getFieldSpec = (name: string): FieldSpecType => {
       return options.fields[name];
-    };
+    }
 
     /*
      * Handle a change to a field, expects field value to already be updated.
@@ -280,7 +280,7 @@ const Formous = (options: Object): ReactClass<*> => {
       : updatedFields;
 
       return alsoTested;
-    };
+    }
 
     /*
      * Update fields in state.
@@ -290,7 +290,7 @@ const Formous = (options: Object): ReactClass<*> => {
         fields,
         form: this.updateFormValidity(fields),
       });
-    };
+    }
 
     /*
      * Returns an updated form state.
@@ -300,7 +300,7 @@ const Formous = (options: Object): ReactClass<*> => {
         ...this.state.form,
         valid: this.isFormValid(fields),
       };
-    };
+    }
 
     render() {
       return <Wrapped
