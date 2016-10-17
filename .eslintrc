@@ -83,7 +83,7 @@
     "space-before-function-paren": [1, {
       "anonymous": "always", "named": "never"
     }],
-    "space-infix-ops": 2,
+    "space-infix-ops": 0,
     "space-unary-ops": 2,
 
     // ES6
