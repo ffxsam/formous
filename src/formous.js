@@ -254,7 +254,11 @@ const Formous = (options: Object): ReactClass<*> => {
         (result: TestResultType, testSpec: TestType) => {
           if (result.valid) {
             const testResult: boolean =
-              testSpec.test(field.get('value'), fields.toJS());
+              testSpec.test(
+                field.get('value'),
+                fields.toJS(),
+                field.toJS()
+              );
             return {
               valid: testResult,
               failProps: !testResult ? testSpec.failProps : undefined,
