@@ -54,7 +54,15 @@ const Formous = (options: Object): ReactClass<*> => {
      * Check form validity along with its fields.
      */
     validateForm = (fields: Object, checkFields: boolean = true) => {
-      const validatedFields = checkFields ? fields.reduce(
+      const fieldsTouched = fields.reduce(
+        (touched: boolean, field: Object) => {
+          return touched || field.get('dirty');
+        }, false);
+      const dirtyFields = fields.reduce(
+        (fields: Object, field: Object, fieldName: string) => {
+          return fields.set(fieldName, field.set('dirty', true));
+        }, this.state.fields);
+      const validatedFields = checkFields ? dirtyFields.reduce(
         (updated: Object, field: Object, name: string) => {
           return this.onChangeField(field, name, updated);
         }, fields) : fields;
@@ -63,7 +71,7 @@ const Formous = (options: Object): ReactClass<*> => {
         fields: validatedFields,
         form: {
           ...this.updateFormValidity(validatedFields),
-          touched: true,
+          touched: fieldsTouched,
         },
       };
     }
@@ -75,11 +83,7 @@ const Formous = (options: Object): ReactClass<*> => {
       return (event: Object) => {
         event.preventDefault();
 
-        const dirtyFields = this.state.fields.reduce(
-          (fields: Object, field: Object, fieldName: string) => {
-            return fields.set(fieldName, field.set('dirty', true));
-          }, this.state.fields);
-        const { fields, form } = this.validateForm(dirtyFields);
+        const { fields, form } = this.validateForm(this.state.fields);
 
         this.setState({ fields, form }, () => {
           formHandler(
@@ -109,6 +113,9 @@ const Formous = (options: Object): ReactClass<*> => {
 
           const updatedFields = fields.set(fieldName, Map({
             events,
+            dirty: false,
+            criticalFail: false,
+            valid: true,
             value: reset
               ? ''
               : (this.state.fields.getIn([fieldName, 'value']) || ''),
@@ -116,12 +123,7 @@ const Formous = (options: Object): ReactClass<*> => {
           return updatedFields;
         }, Map());
 
-      // Set initial field validity
-      const validatedFields = updatedFields.reduce(
-        (fields: Object, field: Object, fieldName: string) => {
-          return fields.setIn([fieldName, 'valid'], true);
-        }, updatedFields);
-      return validatedFields;
+      return updatedFields;
     }
 
     getFieldSpec = (name: string): FieldSpecType => {
@@ -143,7 +145,7 @@ const Formous = (options: Object): ReactClass<*> => {
       const formValid = Object.keys(stateFields)
         .filter((fieldName: string) => fieldName !== excludeField)
         .map((fieldName: string) => stateFields[fieldName])
-        .every((field: Object) => field.valid);
+        .every((field: Object) => field.valid || !field.criticalFail);
 
       /*
        * If we only have one field, .reduce() will have returned an object, not
@@ -180,12 +182,9 @@ const Formous = (options: Object): ReactClass<*> => {
           return this.onChangeField(
             updatedFields.get(fieldName), fieldName, updatedFields);
         }, fields);
-      const { fields: formFields, form } =
-        this.validateForm(validatedFields, false);
 
       this.setState({
-        fields: formFields,
-        form,
+        fields: validatedFields,
       });
     }
 
@@ -259,15 +258,13 @@ const Formous = (options: Object): ReactClass<*> => {
               );
             return {
               valid: testResult,
-              failProps: !testResult ? testSpec.failProps : undefined,
+              failProps: !testResult ? testSpec.failProps : {},
+              criticalFail: !testResult && testSpec.critical,
             };
           }
           return result;
-        }, { valid: true, failProps: undefined });
-      const validatedField = field.merge(Map({
-        valid: testResults.valid,
-        failProps: testResults.failProps,
-      }));
+        }, { valid: true, failProps: {}, criticalFail: false });
+      const validatedField = field.merge(Map(testResults));
       const updatedFields = fields.set(fieldName, validatedField);
 
       const alsoTested = checkAlsoTests && fieldSpec.alsoTest
