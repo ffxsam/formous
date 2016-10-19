@@ -120,7 +120,7 @@ const Formous = (options: Object): ReactClass<*> => {
             events,
             dirty: false,
             criticalFail: false,
-            valid: true,
+            failProps: undefined,
             value: '',
           }));
           return updatedFields;
@@ -148,7 +148,7 @@ const Formous = (options: Object): ReactClass<*> => {
       const formValid = Object.keys(stateFields)
         .filter((fieldName: string) => fieldName !== excludeField)
         .map((fieldName: string) => stateFields[fieldName])
-        .every((field: Object) => field.valid || !field.criticalFail);
+        .every((field: Object) => !field.failProps || !field.criticalFail);
 
       /*
        * If we only have one field, .reduce() will have returned an object, not
@@ -247,7 +247,7 @@ const Formous = (options: Object): ReactClass<*> => {
       const fieldSpec = this.getFieldSpec(fieldName);
       const testResults = fieldSpec.tests.reduce(
         (result: TestResultType, testSpec: TestType) => {
-          if (result.valid) {
+          if (!result.failProps) {
             const testResult: boolean =
               testSpec.test(
                 field.get('value'),
@@ -255,13 +255,12 @@ const Formous = (options: Object): ReactClass<*> => {
                 field.toJS()
               );
             return {
-              valid: testResult,
-              failProps: !testResult ? testSpec.failProps : {},
+              failProps: !testResult ? testSpec.failProps : undefined,
               criticalFail: !testResult && testSpec.critical,
             };
           }
           return result;
-        }, { valid: true, failProps: {}, criticalFail: false });
+        }, { failProps: undefined, criticalFail: false });
       const validatedField = field.merge(Map(testResults));
       const updatedFields = fields.set(fieldName, validatedField);
 
