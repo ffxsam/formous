@@ -46,26 +46,31 @@ const Formous = (options: Object): ReactClass<*> => {
     }
 
     clearForm = () => {
-      const updatedFields = this.initializeFields(true);
+      const updatedFields = this.initializeFields();
       this.updateFields(fromJS(updatedFields));
     }
 
     /*
      * Check form validity along with its fields.
      */
-    validateForm = (fields: Object, checkFields: boolean = true) => {
+    validateForm = (fields: Object, markDirty: boolean = false) => {
       const fieldsTouched = fields.reduce(
         (touched: boolean, field: Object) => {
           return touched || field.get('dirty');
         }, false);
-      const dirtyFields = fields.reduce(
+
+      // only mark fields as dirty on submit
+      const dirtyFields = markDirty
+      ? fields.reduce(
         (fields: Object, field: Object, fieldName: string) => {
           return fields.set(fieldName, field.set('dirty', true));
-        }, this.state.fields);
-      const validatedFields = checkFields ? dirtyFields.reduce(
+        }, this.state.fields)
+      : fields;
+
+      const validatedFields = dirtyFields.reduce(
         (updated: Object, field: Object, name: string) => {
           return this.onChangeField(field, name, updated);
-        }, fields) : fields;
+        }, fields);
 
       return {
         fields: validatedFields,
@@ -83,7 +88,7 @@ const Formous = (options: Object): ReactClass<*> => {
       return (event: Object) => {
         event.preventDefault();
 
-        const { fields, form } = this.validateForm(this.state.fields);
+        const { fields, form } = this.validateForm(this.state.fields, true);
 
         this.setState({ fields, form }, () => {
           formHandler(
@@ -95,7 +100,7 @@ const Formous = (options: Object): ReactClass<*> => {
       }
     }
 
-    initializeFields = (reset: ?boolean): Object => {
+    initializeFields = (): Object => {
       const updatedFields = Map(options.fields).reduce(
         (fields: Object, field: Object, fieldName: string) => {
           const fieldSpec: Object = {
@@ -116,9 +121,7 @@ const Formous = (options: Object): ReactClass<*> => {
             dirty: false,
             criticalFail: false,
             valid: true,
-            value: reset
-              ? ''
-              : (this.state.fields.getIn([fieldName, 'value']) || ''),
+            value: '',
           }));
           return updatedFields;
         }, Map());
@@ -160,10 +163,11 @@ const Formous = (options: Object): ReactClass<*> => {
         dirty: true,
       }));
       const fields = this.state.fields.set(fieldSpec.name, field);
-      const validatedFields = this.onChangeField(field, fieldSpec.name, fields);
+      const { fields: formFields, form } = this.validateForm(fields);
 
       this.setState({
-        fields: validatedFields,
+        fields: formFields,
+        form,
       });
     }
 
@@ -177,14 +181,11 @@ const Formous = (options: Object): ReactClass<*> => {
             field.merge(Map({ value, dirty: true }))
           );
         }, this.state.fields);
-      const validatedFields = mapValues.reduce(
-        (updatedFields: Object, value: any, fieldName: string) => {
-          return this.onChangeField(
-            updatedFields.get(fieldName), fieldName, updatedFields);
-        }, fields);
+      const { fields: validatedFields, form } = this.validateForm(fields);
 
       this.setState({
         fields: validatedFields,
+        form,
       });
     }
 
@@ -195,12 +196,11 @@ const Formous = (options: Object): ReactClass<*> => {
         fieldSpec.name, field
       );
 
-      const validatedFields = this.onChangeField(
-        field, fieldSpec.name, updatedFields);
+      const { fields, form } = this.validateForm(updatedFields);
       this.setState({
         currentField: undefined,
-        fields: validatedFields,
-        form: this.updateFormValidity(validatedFields),
+        fields,
+        form,
       });
     }
 
@@ -227,11 +227,9 @@ const Formous = (options: Object): ReactClass<*> => {
           (fields: Object, value: any, fieldName: string) => {
             return fields.setIn([fieldName, 'value'], value);
           }, this.state.fields);
-        const validatedFields = updatedFields.reduce(
-          (fields: Object, field: Object, fieldName: string) => {
-            return this.onChangeField(field, fieldName, fields);
-          }, updatedFields);
-        this.updateFields(validatedFields);
+        this.setState({
+          fields: updatedFields,
+        });
         this.defaultsSet = true;
       }
     }
