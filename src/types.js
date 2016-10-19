@@ -10,8 +10,8 @@ export type TestType = {
 };
 
 export type TestResultType = {
-  valid: boolean,
   failProps: ?Object,
+  criticalFail: boolean,
 };
 
 export type FieldSpecType = {
