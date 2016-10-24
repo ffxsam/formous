@@ -3,11 +3,9 @@
 import React, { Component } from 'react';
 import { Map, fromJS } from 'immutable';
 
-import type {
-  FieldSpecType, TestType, TestResultType,
-  UserEventType,
-} from './types';
+import type { TestType } from './types';
 import runChecks, { warn } from './dx';
+import { allTestsPassed } from './helpers';
 
 const Formous = (options: Object): ReactClass<*> => {
   return (Wrapped: ReactClass<*>) => class extends Component {
@@ -42,44 +40,13 @@ const Formous = (options: Object): ReactClass<*> => {
       // Syntax checking.. for a positive developer experience!
       runChecks(options);
       updatedFields = this.initializeFields();
-      this.updateFields(updatedFields);
-    }
-
-    clearForm = () => {
-      const updatedFields = this.initializeFields();
       this.updateFields(fromJS(updatedFields));
     }
 
-    /*
-     * Check form validity along with its fields.
-     */
-    validateForm = (fields: Object, markDirty: boolean = false) => {
-      const fieldsTouched = fields.reduce(
-        (touched: boolean, field: Object) => {
-          return touched || field.get('dirty');
-        }, false);
-
-      // only mark fields as dirty on submit
-      const dirtyFields = markDirty
-      ? fields.reduce(
-        (fields: Object, field: Object, fieldName: string) => {
-          return fields.set(fieldName, field.set('dirty', true));
-        }, this.state.fields)
-      : fields;
-
-      const validatedFields = dirtyFields.reduce(
-        (updated: Object, field: Object, name: string) => {
-          return this.onChangeField(field, name, updated);
-        }, fields);
-
-      return {
-        fields: validatedFields,
-        form: {
-          ...this.updateFormValidity(validatedFields),
-          touched: fieldsTouched,
-        },
-      };
-    }
+    clearForm = () => {
+      const updatedFields = this.initializeFields(true);
+      this.updateFields(fromJS(updatedFields));
+    };
 
     /*
      * Submit handler.
@@ -88,50 +55,60 @@ const Formous = (options: Object): ReactClass<*> => {
       return (event: Object) => {
         event.preventDefault();
 
-        const { fields, form } = this.validateForm(this.state.fields, true);
-
-        this.setState({ fields, form }, () => {
-          formHandler(
-            form,
-            fields.map((field: Object) =>
-              ({ value: field.get('value') })).toJS(),
+        let fields = undefined;
+        if (this.state.currentField) {
+          const value = this.state.fields.getIn(
+            [this.state.currentField.name, 'value']
           );
-        });
+
+          fields = this.testFieldAndUpdateState(this.state.currentField, value);
+        }
+
+        const formState = {
+          ...this.state.form,
+          valid: this.isFormValid(fields || this.state.fields),
+        };
+
+        formHandler(
+          formState,
+          (fields || this.state.fields)
+            .map((field: Object) => ({ value: field.get('value') })).toJS()
+        );
       }
-    }
+    };
 
-    initializeFields = (): Object => {
-      const updatedFields = Map(options.fields).reduce(
-        (fields: Object, field: Object, fieldName: string) => {
-          const fieldSpec: Object = {
-            ...options.fields[fieldName],
-            name: fieldName,
-          };
+    initializeFields = (reset: ?boolean): Object => {
+      const updatedFields = {};
 
-          // Events that should be attached to the input fields
-          const events: Object = {
-            onBlur: this.onBlur.bind(this, fieldSpec),
-            onChange: this.onChange.bind(this, fieldSpec),
-            onFocus: this.onFocus.bind(this, fieldSpec),
-            onValidatedChange: this.onValidatedChange.bind(this, fieldSpec),
-          };
+      // Loop through each of the fields passed in
+      for (const fieldName: string in options.fields) {
+        const fieldSpec: Object = {
+          ...options.fields[fieldName],
+          name: fieldName,
+        };
 
-          const updatedFields = fields.set(fieldName, Map({
-            events,
-            dirty: false,
-            criticalFail: false,
-            failProps: undefined,
-            value: '',
-          }));
-          return updatedFields;
-        }, Map());
+        // Events that should be attached to the input fields
+        const events: Object = {
+          onBlur: this.onBlur.bind(this, fieldSpec),
+          onChange: this.onChange.bind(this, fieldSpec),
+          onFocus: this.onFocus.bind(this, fieldSpec),
+        };
+
+        // Set initial field validity
+        const testResults: Array<TestType> = this.testField(fieldSpec, '',
+          true);
+
+        updatedFields[fieldName] = {
+          events,
+          valid: allTestsPassed(testResults),
+          value: reset
+            ? ''
+            : (this.state.fields.getIn([fieldName, 'value']) || ''),
+        };
+      }
 
       return updatedFields;
-    }
-
-    getFieldSpec = (name: string): FieldSpecType => {
-      return options.fields[name];
-    }
+    };
 
     /*
      * Just returns a boolean indicating whether the form is valid. Doesn't run
@@ -148,131 +125,169 @@ const Formous = (options: Object): ReactClass<*> => {
       const formValid = Object.keys(stateFields)
         .filter((fieldName: string) => fieldName !== excludeField)
         .map((fieldName: string) => stateFields[fieldName])
-        .every((field: Object) => !field.failProps || !field.criticalFail);
+        .every((field: Object) => field.valid);
 
       /*
        * If we only have one field, .reduce() will have returned an object, not
        * a boolean.
        */
       return typeof formValid === 'boolean' ? formValid : formValid.valid;
-    }
+    };
 
-    onValidatedChange = (fieldSpec: Object, { target }: UserEventType) => {
-      const field = this.state.fields.get(fieldSpec.name).merge(Map({
-        value: target.value,
-        dirty: true,
-      }));
-      const fields = this.state.fields.set(fieldSpec.name, field);
-      const { fields: formFields, form } = this.validateForm(fields);
-
-      this.setState({
-        fields: formFields,
-        form,
+    markFieldAsValid = (fieldName: string, valid: boolean, options: {
+      failProps: ?Object,
+      quietly: boolean,
+    }) => {
+      const fields = this.state.fields.mergeDeep({
+        [fieldName]: {
+          failProps: options.quietly ? undefined : options.failProps,
+          valid,
+        },
       });
-    }
 
-    updateFormFields = (values: Object) => {
-      const mapValues = Map(values);
-      const fields = mapValues.reduce(
-        (allFields: Object, value: any, fieldName: string) => {
-          const field = allFields.get(fieldName);
-          return allFields.set(
-            fieldName,
-            field.merge(Map({ value, dirty: true }))
-          );
-        }, this.state.fields);
-      const { fields: validatedFields, form } = this.validateForm(fields);
+      this.updateFields(fields);
+    };
 
+    onBlur = (fieldSpec: Object, { target }: Object) => {
+      this.setState({ currentField: undefined });
+      this.testFieldAndUpdateState(fieldSpec, target.value);
+    };
+
+    onChange = (fieldSpec: Object, { target }: Object) => {
       this.setState({
-        fields: validatedFields,
-        form,
+        fields: this.state.fields.setIn([fieldSpec.name, 'value'],
+          target.value),
       });
-    }
-
-    onBlur = (fieldSpec: Object) => {
-      const field = this.state.fields.get(fieldSpec.name)
-        .set('dirty', true);
-      const updatedFields = this.state.fields.set(
-        fieldSpec.name, field
-      );
-
-      const { fields, form } = this.validateForm(updatedFields);
-      this.setState({
-        currentField: undefined,
-        fields,
-        form,
-      });
-    }
-
-    onChange = (fieldSpec: Object, { target }: UserEventType) => {
-      const updatedField = this.state.fields.get(fieldSpec.name).merge(Map({
-        value: target.value,
-        dirty: true,
-      }));
-      this.setState({
-        fields: this.state.fields.set(fieldSpec.name, updatedField),
-      });
-    }
+    };
 
     onFocus = (fieldSpec: Object) => {
       this.setState({
         currentField: fieldSpec,
+        form: {
+          ...this.state.form,
+          touched: true,
+        },
       });
-    }
+    };
 
     setDefaultValues = (defaultData: Object) => {
       // Prevent settings defaults twice
       if (!this.defaultsSet) {
-        const updatedFields = Map(defaultData).reduce(
-          (fields: Object, value: any, fieldName: string) => {
-            return fields.setIn([fieldName, 'value'], value);
-          }, this.state.fields);
-        this.setState({
-          fields: updatedFields,
-        });
+        const defaults: Object = {};
+
+        for (const fieldName: string in defaultData) {
+          const field: Object = {
+            ...options.fields[fieldName],
+            name: fieldName,
+          };
+          const tests: ?Array<TestType> = options.fields[fieldName] &&
+            options.fields[fieldName].tests;
+          let testResults: Array<TestType>;
+
+          if (tests) {
+            testResults = this.testField(field, defaultData[fieldName], true);
+          } else {
+            testResults = [];
+          }
+
+          defaults[fieldName] = {
+            valid: allTestsPassed(testResults),
+            value: defaultData[fieldName],
+          };
+        }
+
+        const fields = this.state.fields.mergeDeep(defaults);
+
+        this.updateFields(fields);
         this.defaultsSet = true;
       }
-    }
-
-    getFieldSpec = (name: string): FieldSpecType => {
-      return options.fields[name];
-    }
+    };
 
     /*
-     * Handle a change to a field, expects field value to already be updated.
-     * Returns updated fields.
+     * Take an array of test results and update the state with the form validity
+     * and individual field's validity and failProps.
      */
-    onChangeField = (field: Object, fieldName: string,
-      fields: Object, checkAlsoTests: boolean = true): Object => {
-      const fieldSpec = this.getFieldSpec(fieldName);
-      const testResults = fieldSpec.tests.reduce(
-        (result: TestResultType, testSpec: TestType) => {
-          if (!result.failProps) {
-            const testResult: boolean =
-              testSpec.test(
-                field.get('value'),
-                fields.toJS(),
-                field.toJS()
-              );
-            return {
-              failProps: !testResult ? testSpec.failProps : undefined,
-              criticalFail: !testResult && testSpec.critical,
-            };
-          }
-          return result;
-        }, { failProps: undefined, criticalFail: false });
-      const validatedField = field.merge(Map(testResults));
-      const updatedFields = fields.set(fieldName, validatedField);
+    setFieldsValidity = (tests: Array<TestType>) => {
+      const updatedFields = {};
 
-      const alsoTested = checkAlsoTests && fieldSpec.alsoTest
-      ? fieldSpec.alsoTest.reduce((alsoFields: Object, alsoName: string) => {
-        const alsoField = updatedFields.get(alsoName);
-        return this.onChangeField(alsoField, alsoName, alsoFields, false);
-      }, updatedFields)
-      : updatedFields;
+      if (tests.length === 0) {
+        warn(false, 'We should never see this? If you see this, please submit' +
+          'an issue at https://github.com/ffxsam/formous/issues');
+      } else {
+        for (const test: TestType of tests) {
+          updatedFields[test.fieldName] = {
+            failProps: test.passed || test.quiet
+              ? undefined
+              : test.failProps,
+            valid: test.passed,
+          };
+        }
 
-      return alsoTested;
-    }
+        const fields = this.state.fields.mergeDeep(updatedFields);
+        this.updateFields(fields);
+
+        return fields;
+      }
+    };
+
+    // Returns all tests that were run
+    testField = (fieldSpec: Object, value: string,
+      initial: ?boolean): Array<TestType> => {
+      /*
+       * testField will actually start at a single field and run its tests, but
+       * due to the alsoTest field, there can be chaining. So testField will
+       * return an array of all failed tests.
+       */
+      const tests: Array<TestType> = fieldSpec.tests;
+      let completedTests: Array<TestType> = [];
+      let failedTestCount: number = 0;
+
+      for (const test: Object of tests) {
+        const testResult: boolean = test.test(value, this.state.fields.toJS());
+
+        completedTests = [{
+          ...test,
+          passed: testResult,
+          fieldName: fieldSpec.name,
+        }];
+
+        if (!testResult) break;
+      }
+
+      failedTestCount = completedTests
+        .filter((test: TestType) => !test.passed).length;
+
+      /*
+       * See if there are related fields we should test
+       * Check !initial, because we don't want to do side-effect tests on form
+       * mount.
+       */
+      if (fieldSpec.alsoTest && !initial && failedTestCount === 0) {
+        fieldSpec.alsoTest.forEach((fieldName: string) => {
+          const fieldInfo: Object = {
+            ...options.fields[fieldName],
+            name: fieldName,
+          };
+          const fieldValue: string =
+            this.state.fields.getIn([fieldName, 'value']);
+          let sideEffectTests: Array<TestType> =
+            this.testField(fieldInfo, fieldValue);
+
+          // Side-effect tests should never display error props
+          sideEffectTests = sideEffectTests
+            .map((test: Object) => ({ ...test, quiet: true }));
+
+          completedTests = [...completedTests, ...sideEffectTests];
+        });
+      }
+
+      return completedTests;
+    };
+
+    testFieldAndUpdateState = (fieldSpec: Object, value: string) => {
+      const completedTests: Array<TestType> = this.testField(fieldSpec, value);
+      return this.setFieldsValidity(completedTests);
+    };
 
     /*
      * Update fields in state.
@@ -282,7 +297,7 @@ const Formous = (options: Object): ReactClass<*> => {
         fields,
         form: this.updateFormValidity(fields),
       });
-    }
+    };
 
     /*
      * Returns an updated form state.
@@ -292,7 +307,7 @@ const Formous = (options: Object): ReactClass<*> => {
         ...this.state.form,
         valid: this.isFormValid(fields),
       };
-    }
+    };
 
     render() {
       return <Wrapped
@@ -301,11 +316,10 @@ const Formous = (options: Object): ReactClass<*> => {
         fields={this.state.fields.toJS()}
         formSubmit={this.handleSubmit}
         formState={this.state.form}
-        updateFormFields={this.updateFormFields}
         setDefaultValues={this.setDefaultValues}
       />
     }
   }
 };
 
-export default Formous;
+export default Formous
