@@ -8,3 +8,17 @@ export type TestType = {
   quiet: boolean,
   test: (value: string, fields: ?Object) => boolean,
 };
+
+export type TestResultType = {
+  failProps: ?Object,
+  criticalFail: boolean,
+};
+
+export type FieldSpecType = {
+  name: string,
+  tests: Function[],
+};
+
+export type UserEventType = {
+  target: {value: any},
+};

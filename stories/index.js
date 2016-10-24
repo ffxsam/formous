@@ -47,6 +47,74 @@ storiesOf('Formous', module)
     return <Wrapped />
   })
 
+  .add('update multiple fields', () => {
+    const options = {
+      fields: {
+        name: {
+          tests: [requiredField],
+        },
+        description: {
+          tests: [requiredField],
+        },
+      },
+    };
+    const Example = ({ fields, formSubmit, clearForm, updateFormFields }) => {
+      const codeBlock = `this.props.updateFormFields({
+  name: '',
+  description: 'this is a description',
+});`
+
+      return <div>
+        <form onSubmit={formSubmit(action('form submit'))}>
+          <div>
+            <p>
+              Use <code>this.props.updateFormFields(values: Object)</code> to
+              update the value of multiple fields at once.
+            </p>
+
+            <p>This will also run validations and update the form status</p>
+
+            <pre>
+              <code>
+                {codeBlock}
+              </code>
+            </pre>
+            <button
+              onClick={() => {
+                updateFormFields({
+                  name: '',
+                  description: 'this is a description',
+                });
+              }}>
+              set the value of multiple fields
+            </button><br />
+            <input
+              type="text"
+              value={fields.name.value}
+              { ...fields.name.events }
+            />
+            <Error { ...fields.name.failProps } />
+            <br />
+            <input
+              type="text"
+              value={fields.description.value}
+              { ...fields.description.events }
+            />
+            <Error { ...fields.description.failProps } />
+          </div>
+
+          <div>
+            <input type="submit" />
+            <button type="button" onClick={clearForm}>Reset</button>
+          </div>
+        </form>
+      </div>
+    };
+    const Wrapped = Formous(options)(Example);
+
+    return <Wrapped />
+  })
+
   .add('test chaining', () => {
     const options = {
       fields: {
@@ -98,6 +166,47 @@ storiesOf('Formous', module)
     const Wrapped = Formous(options)(Example);
 
     return <Wrapped />
+  })
+
+  .add('validate on hover', () => {
+    const options = {
+      fields: {
+        title: {
+          tests: [requiredField],
+        },
+        body: {
+          tests: [requiredField],
+        },
+      },
+    };
+
+    const Example = (props) => {
+      return <div>
+        <p>Force fields to validate.</p>
+        <p>
+          This is useful if you want to force validation on an event that isn't
+          a form submission.
+        </p>
+        <input value={props.fields.title.value} />
+        <Error { ...props.fields.title.failProps } />
+        <br />
+
+        <input value={props.fields.body.value} />
+        <Error { ...props.fields.body.failProps } />
+        <br />
+
+        <pre><code>{JSON.stringify(props.fields)}</code></pre>
+        <button onMouseOver={() => {
+          props.updateFormFields({
+            title: props.fields.title.value,
+            body: props.fields.body.value,
+          });
+        }}>Submit</button>
+      </div>;
+    };
+
+    const Wrapped = Formous(options)(Example);
+    return <Wrapped />;
   })
 
   .add('default values', () => {
