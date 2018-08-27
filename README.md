@@ -1,5 +1,7 @@
 # Formous [![Build Status](https://travis-ci.org/ffxsam/formous.svg?branch=master)](https://travis-ci.org/ffxsam/formous)
 
+## ***NOTE: This repository is abandonware. PRs will not be accepted.***
+
 ### Simple and elegant form-handling for React
 
 Formous strives to be a *simple*, elegant solution to handling forms in React. Formous's features and benefits:
