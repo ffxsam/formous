@@ -170,35 +170,38 @@ const Formous = (options: Object): ReactClass<*> => {
       });
     };
 
+    setFieldValues = (fieldValues: Object) => {
+      const values: Object = {};
+
+      for (const fieldName: string in fieldValues) {
+        const field: Object = {
+          ...options.fields[fieldName],
+          name: fieldName,
+        };
+        const tests: ?Array<TestType> = options.fields[fieldName] &&
+              options.fields[fieldName].tests;
+        let testResults: Array<TestType>;
+
+        if (tests) {
+          testResults = this.testField(field, fieldValues[fieldName], true);
+        } else {
+          testResults = [];
+        }
+
+        values[fieldName] = {
+          valid: allTestsPassed(testResults),
+          value: fieldValues[fieldName],
+        };
+      }
+
+      const fields = this.state.fields.mergeDeep(values);
+      this.updateFields(fields);
+    };
+
     setDefaultValues = (defaultData: Object) => {
       // Prevent settings defaults twice
       if (!this.defaultsSet) {
-        const defaults: Object = {};
-
-        for (const fieldName: string in defaultData) {
-          const field: Object = {
-            ...options.fields[fieldName],
-            name: fieldName,
-          };
-          const tests: ?Array<TestType> = options.fields[fieldName] &&
-            options.fields[fieldName].tests;
-          let testResults: Array<TestType>;
-
-          if (tests) {
-            testResults = this.testField(field, defaultData[fieldName], true);
-          } else {
-            testResults = [];
-          }
-
-          defaults[fieldName] = {
-            valid: allTestsPassed(testResults),
-            value: defaultData[fieldName],
-          };
-        }
-
-        const fields = this.state.fields.mergeDeep(defaults);
-
-        this.updateFields(fields);
+        this.setFieldValues(defaultData);
         this.defaultsSet = true;
       }
     };
@@ -317,6 +320,7 @@ const Formous = (options: Object): ReactClass<*> => {
         formSubmit={this.handleSubmit}
         formState={this.state.form}
         setDefaultValues={this.setDefaultValues}
+        setFieldValues={this.setFieldValues}
       />
     }
   }
